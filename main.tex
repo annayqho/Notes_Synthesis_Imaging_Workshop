@@ -1,0 +1,1121 @@
+\documentclass[a4paper]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{epigraph}
+
+\setlength\parindent{0pt}
+
+\newcommand{\ledd}{L_{\mathrm{Edd}}}
+\newcommand{\medd}{\dot{M}_{\mathrm{Edd}}}
+\newcommand{\Comment}[2]{ [{\color{red}\sc #1 :} {{\color{cyan} \it #2}}]}
+
+
+\title{NRAO Synthesis Imaging Summer School}
+
+\author{Anna Ho}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Topics I want to memorize \& review}
+
+\begin{itemize}
+
+\item Different kinds of temperature and what they mean
+\item Basic formulas: angular resolution, relationship between visibility and intensity, beam solid angle, effective area, Stokes definitions, units of radiation, Fourier Transform
+\item Block diagram of an interferometer
+\item Visibility
+\item Correlator
+\item Nyquist sampling
+\item Deconvolution algorithms
+\item Math: Jones Calculus
+\item Math: Mueller Calculus
+\item CS: Fast Fourier Transform
+\item Math: Convolution, Convolution Theorem
+\item The Radiometer Equation
+\item Dipole Antennas
+\item Self Calibration
+
+
+\end{itemize}
+
+\section{Radiation}
+
+\subsection{Light}
+
+\begin{description}
+
+\item[Specific intensity] 
+$$ dE = I_\nu \, d\nu \, d\Omega \, dt \, dA $$
+
+\item[flux]
+$$ F = I_\nu \cos \Omega $$
+
+\item[solid angle]
+$$ d\Omega = \cos\theta d\theta d\phi $$
+
+\end{description}
+
+\subsection{Atmosphere}
+
+\begin{description}
+
+\item[Ionospheric cutoff] find a diagram for this
+where ALMA, the VLT  are
+
+\end{description}
+
+\subsection{Emission Mechanisms}
+
+\begin{description}
+
+\item[Blackbody] and the two limits. True blackbody radiation is not that common in our field.
+
+\item[Bremsstrahlung (Free-free)] optically thin, thermal emission from ionized gas (HII regions etc). Good for estimating density \& temperature of ionized gas, counting ionizing photons, inferring SFR. Emissivity depends on number density of electrons adn number density of hydrogen. Bremsstrahlung spectra are roughly flat across much of frequency space. Optically thick at low frequencies (blackbody emission, the characteristic $\nu^2$). 
+
+\item[Synchrotron emission] comes from nonthermal (their energies do not follow the Maxwell-Boltzmann velocity distribution, usually because they're relativistic) electrons in a magnetic field. Accelerated charge radiates. Usually you can pull out information about particle energies, densities, magnetic field strength. We usually assume a power law distribution of electron energy, $ f(E) = f_0 E^{-s} $ where $s \sim 2-3$. Plot: turnover at low frequencies, could come from emission becoming optically thin again. Or there might be a turnover at high frequency coming from particle having maximum energy. Synchrotron is one of the few emission processes that can make polarized radiation. 
+
+\item[Spectral line emission] line strengths generally depend on gas density, species abundance, radiation field, kinematics of gas
+
+\end{description}
+
+\section{Temperature}
+
+\begin{description}
+
+\item[Physical temperature]
+This is what you're trying to measure if you stick a thermometer into something. Characterized by the kinetic energy of atoms and molecules. Describes how particle energies follow the Maxwell-Boltzmann velocity distribution. 
+
+\item[Excitation temperature]
+Particularly relevant to spectral line emission. Describes the relative populations of two energy levels in a collection of atoms/molecules/ions. 
+$$ \frac{n_2}{n_1} = \left( \frac{g_2}{g_1} \right) e^{-h\nu_0 / kT_\mathrm{ex}} $$
+May or may not be equal to the physical temperature. We often assume that those two temperatures are equal and sometimes that's not correct. \Comment{AYQH}{What determines whether the physical and excitation temperature are the same?}
+
+\item[Brightness temperature] When you're on the low frequency side, the slope of the specific intensity is $\nu^2$ (Rayleigh-Jeans limit). Given this, we can define brightness temperature as a scaled version of specific intensity. Obviously, brightness temperature doesn't really have a meaning for non-thermal radiation.
+
+\item[Antenna temperature] You're going to have a receiver and some apparatus to measure the power that is detected by this receiver. Normally there's a big antenna in front of the receiver. If you replace the antenna with a matched receiver, the temperature of that matched receiver is what you would measure. You can write that power as a temperature $kT$. It's a combination of how bright the source is and how it couples to the telescope sensitivity pattern. Will always be less than the brightness temperature because none of our telescope systems are perfect. 
+
+\item[Receiver temp, system temp] Use this concept of temperature as a way of scaling some kind of power. And we quote power in Kelvin because it's much shorter to write. These quantify the noise contributed to your measurement, so we generally want these to be as small as possible. System temperature includes things like the Earth's atmosphere. RMS temperature fluctuations in your measurement scale linearly with $T_\mathrm{sys}$. You can beat this down by increasing bandwidth and integration time. 
+$$ \Delta T_\mathrm{RMS} = \frac{T_\mathrm{sys}}{\sqrt[]{\Delta \nu \tau}} $$
+
+\item[Noise temperature] $$ P_\mathrm{in} = k_B T_n \Delta \nu $$ Basically, in radio astronomy, you often quote power in units of temperature. 
+
+\end{description}
+
+\section{Making Images}
+
+\begin{description}
+
+\item[Diffraction]
+
+\item[Angular Resolution]
+For a single dish,
+$$ \theta \sim \frac{\lambda}{D} $$
+D is the diameter of the lens aperture and $\lambda$ is the wavelength of the light. 
+For an array of N dishes,
+$$ \theta \sim \frac{\lambda}{D_\mathrm{max}} $$
+
+\item[Interferometry]
+
+\item[Calibration]
+Of course, in practice, plane waves are distorted by the atmosphere. So \emph{calibration} is how we fix that.
+
+\end{description}
+
+An electric field reaches the Earth. The Fourier Transform of the brightness distribution of the sky is the correlation of the electric field at Earth. Consider antennas a pair at a time. The correlator compares the electric fields at the two telescopes (correlation: multiply and integrate). If you do that, you get what's known as a visibility. Each projected baseline becomes a dot on the UV plane. Blue dots indicate all of the positions where I have data. From this, you get the dirty beam point spread function. 
+
+\section{Antennas \& Receivers: how do antenna elements affect the quality of images?}
+
+\subsection{Block diagram of an interferometer}
+
+Radiation from source reflects off primary reflector onto secondary, collected by feedhorn, amplified by LNA (everything above that is the RF section), you could send that signal back to the detector for each receiver, but that would be highly inefficient. Instead, convert RF to IF. That's common to all different receivers. That comes out and goes to a correlator. A correlator is a custom computer that simply multiplies complex voltages that come from the antennas. RF section: antenna elements and LNA. We're going to be talking about that.
+
+\subsection{Antenna properties}
+
+Basically, antenna properties can affect the image you see. Our antennas have amplitude and phase patterns that can vary across the radio source. Polarization properties of the antenna can modify the apparent polarization of the source. 
+
+\subsection{Antenna types}
+
+\begin{description}
+
+\item[Wire] For wavelengths longer than a meter. (Lots of collecting area) 
+
+\item[Reflector] $ \lambda < 1\,$m
+
+\item[Hybrid] $ \lambda \sim 1\,$m
+
+\end{description}
+
+\subsection{Terminology}
+
+We have a source with a particular brightness distribution. The antenna has a beam pattern, indicating what part of the sky it's sensitive to. 
+
+\begin{description}
+
+\item[Effective collecting area] The power that you see is the effective collecting area times the brightness times bandwidth times solid angle. 
+
+\item[On-axis response] At the highest point, where you have the most gain for the antenna
+
+\item[Beam solid angle]
+
+$$ \Omega_A = \int \int P_n(\theta, \phi) \, d\Omega $$
+
+Limitations: the product of effective area and solid angle is the wavelength squared. $$ A_0 \Omega_A = \lambda^2 $$ So, there's always a trade-off. VLA tends to maximize the first number at the price of the second. If you want to survey the whole sky, your gain will always be $ \frac{\lambda^2}{4\pi} $. 
+
+\item[Side lobes] They increase the background noise because they fall on the ground (the ground is hot, $300\,$K). This is where RFI enters our signal. Because side lobes and back lobes cover a greater part of the sky, all of the RFI is coming from there. We want to suppress those things. 
+
+\end{description}
+
+\subsection{What determines beam shape?}
+
+Point the horn at the dish: how do you use the collecting area? Uniformly illuminated? 
+
+In practice, feed horns have a \textbf{taper}. 
+
+\subsection{Different kinds of mounts}
+
+\subsubsection{Altitude over azimuth}
+
+Advantages
+\begin{itemize}
+\item Cost: if you build a panel of the antenna over here, that same panel could be used at that same radius around the entire antenna. 
+\item Engineers like building right angles
+\item Gravity performance: as you tip a structure in elevation, the antenna deforms. 
+\end{itemize}
+
+Disadvantages
+\begin{itemize}
+\item Zone of avoidance: there's a cone where you just can't track the source (just for the ones that go straight overhead) 
+\item Beam rotates on the sky: the source rotates underneath our beam, so we get different gains at different parts of the source
+\end{itemize}
+
+\subsubsection{Equatorial}
+
+100 years ago, servo technology wasn't what it is today. So, you wanted to minimize the number of motions you had to control. With this kind of mount, you lock your declination axis to the declination of the source. And then all you have to do during an observation is rotate the polar axis to compensate for the rotation of the earth. 
+
+Advantages
+\begin{itemize}
+\item Tracking accuracy
+\item Beam doesn't rotate
+\end{itemize}
+
+Disadvantages
+\begin{itemize}
+\item Cost
+\item Gravity: no matter where it's pointing, gravity is acting the same way. 
+\end{itemize}
+
+\subsection{Optical configurations}
+
+Paraboloids: reflect to a single point
+
+\begin{description}
+
+\item[Prime focus] Nice advantages: you can use the entire frequency range of the reflector. But the drawbacks: there's not a lot of real estate at this configuration. 
+
+You can get around a lot of these problems using a secondary mirror. 
+
+\item[Cassegrain] Subreflector has a hyperbolic shape, e.g. ATCA. To get multiple feedhorns on there, the JVLA puts them all in a circle and rotates the subreflector to redirect the radiation onto a particular feedhorn. These things are completely passive, it's just a fancy waveguide structure. The wavelength it's designed for is the length divided by the opening angle (beamwidth of horn). Original feedhorns tended to be smooth.
+
+\item[Dual offset] GBT, it's really expensive to do that. 
+
+\end{description}
+
+On multiple reflector systems, you can get to the point where low frequency receivers can be unmanageably large. 
+
+\subsection{Aperture efficiency}
+
+There are a number of factors that contribute to $\eta$. It's all these things multiplied together: reflector surface efficiency, blockage efficiency, feed spillover efficiency, ...
+
+Long-$\lambda$ radiation can't see small imperfections. But when imperfections are a significant fraction of the $\lambda$, it can scatter the radiation instead of reflecting it back to the focal point. 
+
+So, the efficiency tells you what wavelengths you can use your antenna for. 
+
+Remember, these are random imperfections.
+
+$\eta$ gets to 0.70 at best, gets down to 0.20, 0.25. ``If you can collect photons, we'll use it." ``You pay a lot of money for this.''
+
+Efficiency is also affected by blockage: the subreflector, etc, you've thrown away the collecting area, so that's about a 10-15\% effect. 
+
+About the VLA: ``We're not putting stuff on the plains that deliver bad things." [someone asked about the noise sources most difficult to account for]
+
+At high frequencies, one of the most difficult things to deal with is pointing. 
+
+\subsection{Surface errors}
+
+Different panels, if they're not set exactly right, can act like different uncorrelated antennas. 
+
+\subsection{Antenna gain}
+
+Gain is optimized for a certain elevation, because you have to factor in where you're likely to be pointing at any given time. Deformations more significant at shorter wavelengths than at longer wavelengths. GBT has surface actuators that can take much of the elevation-dependence about. That's 60\% efficiency at K-band, which is pretty good, especially for a 100\,m-diameter antenna.
+
+\subsection{Antenna pointing}
+
+Can improve this by measuring pointing errors via frequent observations of a nearby calibration source. 
+
+\subsection{Antenna polarization}
+
+Two parts: one constant across the beam, one variable across the beam
+
+``It looks more like a jewelry store inside that thing than a receiver.''
+
+\section{Fundamentals of Radio Interferometry}
+
+\epigraph{It's not that these things are complicated, they're just unfamiliar.}{Rick Perley}
+
+\subsection{Why do it at all?}
+
+It's all about angular resolution. Any coherent structure with diameter $D$ has angular resolution in radians $\lambda / D$. (The inverse of the number of wavelengths across that aperture). In practical units,
+
+$$ \theta_\mathrm{arcmin} = \frac{38 \lambda_\mathrm{cm}}{D_\mathrm{m}} $$
+
+To get 1 arcsecond resolution, would need an aperture of 40\,km. There's no way you're going to build something like that, so you need interferometry. An arcsecond: a dime at 2.3 miles. 
+
+\subsection{Antennas: an EM wave converter}
+
+I'm not interested in what the antenna is doing. Interferometry: measuring electric fields and cross-correlating them at spatially separated locations. Spatial coherence of electric fields at spatially separated points. A distant object casts an electric field across a very large aperture. Antenna's job: convert EM waves (V/M) into a voltage, which goes down some wire or an optical cable, or something, ``I don't care.'' It's a sensor. The fact that it has angular properties: we'll ignore that. 
+
+\subsection{The basic interferometer, how it works, how it interacts with intensity}
+
+A parabolic dish is actually a free space interferometer. You might think of it as a reflector which takes a plane wave and reflects it to a point. I look at it as a converter between a plane wave and a spherical wave. It takes flat, incoming phase fronts, and turns them into a spherical wavefront. You add all this stuff up and put a receiver there. It's an interferometric phenomenon that putting your receiver slightly offset doesn't work very well. You sum up the voltages at the focus. But you can take this big thing and replace it with lots of little things, each with its own electronics and its own stuff. Add them up to a summation at the \emph{virtual focus}. As long as the travel times of the plane wave through these networks to the virtual focus is the same, then the virtual focus is basically the real focus. We've replaced a large, single expensive structure, with lots of little cheap ones that don't even need to be next to each other! We're collecting signals, bringing them to a single place, and then doing some comparative addition or multiplication. 
+
+\begin{description}
+\item[Quasi-monochromatic radiation:] simple mathematical model for electric fields. To allow simple mathematics to be used, we use a common approximation. The concept is: if you have a narrow enough slice in frequency, the EM radiation that passes through that filter becomes arbitrarily close to a simple sinusoid. If you have a narrow passband and you detect a signal and put it onto an oscilloscope, you'll get something that roughly looks like this: rapidly oscillating function (central frequency) and a modulation of it (summation is moving in and out of phase, but the rate of change of the envelope is fairly small).
+\end{description}
+
+Representing the electric field. Amplitude and phase remain constant for a time about equal to the inverse of the bandwidth. 
+
+Simplifying assumptions (``amazing what you can get away with''): 
+\begin{itemize}
+\item my interferometer doesn't move, nor does the sky move. 
+\item quasi-monochromatic
+\item no frequency conversions (our wonderful engineers do this for good reasons, but our toy interferometer - it's just straight through)
+\item single polarization, otherwise it will ``only complicate your mind''
+\item no distortions, changing electronics, ionosphere, ...
+\item source at infinity, so that the plane wave coming in has no curvature
+\item idealized electronics
+\end{itemize}
+
+We are talking about two sensors: interferometry is about capturing the E field at two places and getting those signals to a common point, whether it's with wires or fiber optics or mirrors. Radiation from the far field goes an extra path length to get to the second sensor: baseline dot product with direction vector. Leads to an important quantity called the geometric delay, which has an associated phase difference. The interferometer doesn't know anything about velocity or time delay, but it knows all about \textbf{phase}. These are critical, critical concepts!
+
+Two paths take it to the thing marked with an X, because it's the cross product that produces the quantity that we need. There's a multiplication, and it assumes that the two paths have exactly the same propagation time. Then we average, and then we get an output: $R_C = A^2 \cos (\omega \tau_g)$. At the point of averaging, there are two terms: one varying rapidly at twice the frequency, and we don't care about that one. There's another one that's an unchanging quantity that depends only on the frequency and the delay $\tau_g$. This is the one we're after. By averaging, we get rid of the annoying term. The average tells you how out of phase they are: if it's 0, then they're 90º offset. If they're totally out of phase, it's -0.5. The offset is telling us about the direction: about the phase direction. 
+
+$u = b / \lambda$: the east-west baseline length in wavelengths. 
+
+I put my sensors 10 wavelengths apart ($u = 10$): what does the sinusoidal response look like in the sky? Two stations make a coherence pattern on the sky, so that if you've arranged your electronics, there's a perpendicular plane perpendicular to the baseline from which signals arrive exactly in phase, giving you a positive response. $\frac{1}{10}$ radian off to each side, there's a cone from which radiation will arrive one wavelength earlier at the closer sensor. Turns out that there are ten cones between the perpendicular bisector at the baseline: ten maxima. That means that the radiation coming from ten different cones will meet the requirement of arriving in-phase. So, interferometer won't be able to tell. And there are ten more in the other direction. 
+
+Suppose you make the baseline 25 wavelengths on. Now, the angle over which the coherence condition is met is shorter. You don't have to go as far to meet the coherence requirement. So, the longer baseline has a tighter fringe pattern. Ancient astronomers would put these fringes on a piece of chart paper. So now it's $\frac{1}{25}$ of a radian. There's a maximum along the pole, a maximum along the perpendicular bisector, and 24 cones. 
+
+Negative fringes: means that the radiation is out of phase, reaches one half a wavelength before or after the other one. Negative has nothing to do with power, has everything to do with the phase relationship. 
+
+On an angular perspective, not that the separation between adjacent fringes gets bigger as you get longer. The angular resolution reduces as the baseline becomes projected towards you. 
+
+Sensors are important, because for interferometry the baseline is everything. Ideally, the sensor would have an isotropic response. 
+
+\subsection{Real sensors}
+
+Modify your patterns. They multiply the pattern shape. For example, if you have a dipole-like response (maximum at the top, zero at the horizon) then the fringe pattern is attenuated instead of being uniform at all angles. If you have a 25\,m dish, that multiplies the pattern, so the fringe separation remains the same (b/c that's defined by the baseline). The effect of a parabolic antenna is to attenuate the strength of the response function. 
+
+\subsection{Response from a point source}
+
+Monochromatic plane wave comes in and reaches your two sensors.
+
+\subsection{Response from an extended source}
+
+What the interferometer does: gives you a product between the collecting E field and converts to volts radiation from everywhere. You have to keep in mind that the multiplier doesn't know anything about the direction. But as long as those two signals are incoherent with each other, they don't give you any response. Spatially incoherent: means there's no specific phase relationship between those signals. The interferometer filters out common signals. 
+
+Extended emission: as long as the radiation from two separate points is not phase-related, this is the response
+
+$$ R_C = \int \int I_\nu (\textbf{s}) \cos (2 \pi \nu \textbf{b} \cdot \textbf{s}) \, d\Omega $$
+
+You've got some extended blobby region out there: not a point source, but some extended thing. You have an interferometer baseline. The baseline casts a sinusoidal fringe modification on top of this extended structure, then sums it up. 
+
+Short mathematical digression: for any real function, intensity is a function of x and y directions, can be written as a sum of even and odd parts. $R_C$ is only sensitive to the even part of the structure. The odd part cannot be detected by our hypothetical cosine correlator. Any inversion method you invent will only show the even part. 
+
+Define a complex function, the complex visibility. This gives us a beautiful and useful relationship between the source brightness (the visibility) and the response of an interferometer. Two separated, orthogonally oriented sets of cosines. Much simpler mathematics, much more compact, and then you can use complex analysis. 
+
+Well how do you make these 90º phase shift things? Well, you could put the signal through a quarter wavelength wire. But you can't do that for a wideband system. Hilbert Transform. Mostly done with digital techniques inside the correlators. 
+
+``Once you go into this complex notation, you can go complex all the way.'' You can now represent the voltages, which are fundamentally real numbers, by these exponentials. And when you go through the cross product, you get the same expression. All of this beautiful complex analysis can be transferred over. 
+
+Suppose we have a Gaussian source, and we're observing it with a baseline. A long baseline takes that Gaussian source and gives you positive and negative fringes (the shorter the baseline, the further apart the fringes are). The sine function, the shifted 90º sine function, has all these things shifted by 90º. You can see that this is a symmetric function and this is an antisymmetric function, so this has to come out to exactly zero. All even functions give no response to the odd part.
+
+Extended symmetric doubles: you can think of a double source. \textbf{Every visibility function is a unique, other-world representation of the structure.} You really need to learn to live in the parallel universe. 
+
+u: east-west, v: north-south. 
+
+By definition, a point source calibrated at the phase center gives you the same amplitude in all baselines, and zero phase in all baselines. Any deviation from that is due to noise, but for the VLA that's on the mJy level for amplitude and the fraction of a degree level for phase. The influence of a faint background source is a ``phase ramp'' across the data. 
+
+A slightly resolved object: it has a phase ramp. The source is not at phase center.
+
+\section{Interferometry, Part II}
+
+Relax our artificial assumptions; you can pull this off with imperfect setups. 
+
+\subsection{Practical extensions}
+
+We showed that there's this great thing called visibility that has a compact relationship with the intensity. 
+
+\begin{equation}
+V(\mathbf{b}) = \int \int I_\nu (s) e^{-2\pi\nu i \mathbf{b} \cdot \mathbf{s} / c} d\Omega
+\end{equation}
+
+\begin{enumerate}
+
+\item First, real sensors don't have uniform sensitivity in all directions: they have a directional voltage gain pattern. You can slip a function for the gain pattern into that integral in (1).
+
+\item There is no such thing as a zero-bandwidth interferometer. Affects your fringe pattern. If you have a finite bandwidth interferometer, the fringe pattern which you need dies with distance. This can be described by a \textbf{fringe attenuation function}, which is a sinc function: found everywhere in signal processing. The fringe pattern is maximum on the perpendicular bisector, and as you go off angle the fringes get weaker and weaker until they reach the null. With difference bandpasses, the envelopes are different but the oscillations are the same (they are determined by the interferometer, not the bandpass).
+
+\item \textbf{The off-meridian problem}. This is all just fine if your source happens to be on the meridian plane (at the zenith). Want to be able to shift the wave packet of fringes (the fringe pattern with its bandwidth-induced modulation) It's a time delay causing the modulation in the first place. So by shifting time, can take those fringes with its modulation function and shift it somewhere else. You can add or subtract time to \textbf{maximize the fringe response}. Each direction has a time delay associated with it. When you put the delay function in, beam pattern concentrated within (typically) $\sim 1$º. The actual oscillations are not affected, if there's no local oscillator. All you're doing is shifting the illumination pattern to keep the fringes maximum in the direction where the source is. 
+
+\item \textbf{The rotating platform problem}. Simple extension to what we had before, except need to continually add delay. 
+
+\item \textbf{Phase tracking}. The baseline sets a fringe pattern, and the source is moving through the fringe pattern: very quickly, for a big interferometer (70\,Hz for the longest baselines on the VLA). If you don't want to lose any data, you have to sample very quickly. The motion of the source through the fringe pattern is useless information, because all it tells you is how quickly the Earth is turning! You don't want to sample the data at hundreds of Hz only to get around the fact that Earth is rotating. We want to be able to shift the fringes moving with the source: fix the fringes to the source, because in that integral is the integral of the exponential that is the cosines and the sines with the intensity that is giving us the real and imaginary parts we need to do the Fourier transforms. Just apply a geometric offset: it's the multiplication of intensity with the fringe pattern that we want, and we don't want the fringe pattern to be moving. This is good because you slow down the data recording needs, prevents bandwidth delay losses. What sets the dump rate for any interferometer: how long it takes an object to move from one fringe to another. If you increase the integration time, you start to lose information on the differential rotation through the integration pattern. 
+
+\end{enumerate}
+
+\subsection{Time-Averaging Loss}
+
+How long can you integrate before the differential motion destroys the fringe amplitude? The primary beam gets smaller in the same ratio that the fringe separation gets smaller, so the time is constant across wavelength given a particular interferometer setup. It's about 10 seconds for the VLA. 
+
+\subsection{Heterodyne Interferometer: LOs, IFs, Downconversion}
+
+Everything so far was RF interferometer: means cross-correlation is done at the same frequency that the radiation comes in at. It's an amazing thing in this world that you can take information at one frequency and transpose it to another. It cannot be done in the optical because of quantum mechanical information. Can only be done in the radio and infrared: downconversion without any loss of information.
+But high frequency components are much more expensive, and generally perform more poorly than low frequency components.
+
+\begin{description}
+\item[Downconversion:] have a LO, which is a pure sinusoid signal (``a pure hum, if you will''). You multiply this with your original signal, then apply a filter.
+\end{description}
+
+\subsection{Centers}
+
+\begin{description}
+\item[Beam tracking (pointing) center]
+\item[Delay tracking center]
+\item[Phase tracking center]
+\end{description}
+
+\subsection{Geometry}
+
+Fundamental relationship between visibility and sky brightness looks just like a Fourier Transform. But the sky is 2D. \\
+
+Sky brightness is a physical quantity. Telescopes has a reception pattern that's continuous and soft (can't make a reception pattern that's rectangular). If you wanted a square beam, you would need an infinite sized telescope. Interferometer, each telescope is seeing the same thing, but the action of the cross-correlation imposes a modulation of the fringes across the source. And these fringes are positive and negative. When you slap a baseline on, you get a set of fringes across your source: finely-spaced with a long baseline, widely spaced with a short baseline. The correlator sums the product of the modulation with the brightness, and that's the visibility. If you're tracking with the source, that means the fringe geometry has been fixed with the source geometry. If you didn't track the fringes, you'd only need one correlator. You can save the money on the correlator if you're willing to sample a lot faster. \\
+
+Assume an interferometer whose antennas all lie on a single plane. $(u,v)$ are orthogonal directions on the surface and $w$ is the direction up (orthogonal to the measurement surface). The units of $u$ and $v$ are wavelengths. E-W interferometers can use this special geometry, because the w-coordinate points to the NCP: Westerbork, ATCA. And any coplanar 2D array (like the VLA) is 2D at any instant in time: but a few minutes later the source has moved, the plane is rotated and tilted with respect to the one you had before, so in effect the visibilities that you're measuring are in a 3D volume, and now you have a much more complicated problem. The problem with 2D coverage is that 2D is 2D! If your source is really close to the horizon, the information becomes degenerate to observations on the equator. \\
+
+The \textbf{Clark Condition} for trouble. \\
+
+Coverage of the U-V plane. To get a good image, you need good coverage in the U-V plane. \\
+
+In the typical $(u,v)$ plane, the $w$ axis is pointing to your source. The position of the source with respect to that fiducial direction is given by $(l,m)$. $u$ is the same direction as the angle $\alpha$, and $v$ is the direction to the north. $w$ is the delay direction towards the source. \\
+
+A 1-$\lambda$ baseline = fringe separation of 1 radian. So, a 206265-$\lambda$ baseline = fringe separation of 1 arcsecond. If you make a visibility function and it has a periodicity of 206 k$\lambda$, that's a 1 arcsecond source, more or less. 
+
+\Comment{Suggested Reading}{Bracewell, The Fourier Transform \& Its Applications}
+
+\Comment{Suggested Reading}{Perley, Carilli: Synthesis Imaging in Radio Astronomy}
+
+$(u,v)$ plane: baseline components EW and NS when you're facing right to the source. Two scales that affect everything: the outer scale, the maximum baseline. There's no baseline beyond that. This sets the highest resolution. The longest baseline gives you the measure of your highest resolution. But unfortunately interferometers have another limit: the shortest baseline limit. There's always a hole in the middle, where you don't have any data. The first reason for that is: you don't have any short spacings. There literally can't be a spacing less than the width of your antennas, for example. This means that any information on an angular scale bigger than this is not in your data. So, you can't get a true reconstruction of angular scales of that size. It turns out that deconvolution has the amazing ability to take the sidelobes out of your image. You're inventing numbers to fit in places where you didn't have any information. The main reason this works is that the sky is mostly dark, so there aren't an infinite number of degrees of freedom you're trying to fit for. 
+
+\section{Special Topic: Radio Afterglows from Meteors with the LWA}
+
+Fireballs definitely follow a non-power law spectra (non-thermal). And the emission is highly dependent on the altitude. So that suggests that there's some relationship to the air density, such that the emission mechanism has something to do with emission.
+
+\section{The Beating Heart of the Interferometer: The Correlator}
+
+The correlator has to compensate for all the ways we mistreated the signal before it got there, before/while splitting by frequency and multiplying. ``It's the end of a long day and you've been Perley'd for two hours." \\
+
+If you want to design radio astronomy instrumentation/algorithms, propose the right observations, identify problems in data or images, you have to understand correlators. \\
+
+You have coordinates $l$ and $m$ in the sky, which would normally be RA and Dec, corresponding to coordinates $u$ and $v$ in the measurement plane. If you look at the sky and look at the image that's formed as a function of $(l,m)$ and take the Fourier Transform, you get the visibilities in the $(u,v)$ plane. If you had two antennas on the plane in the perpendicular direction, and multiply and average the two antennas for a while, you get one pair of pixels on this plane. ``You don't need to know why it works anymore; you can be a user of this relationship." \\
+
+The $(u,v)$ plane is unique for each wavelength (?). You can treat each wavelength independently because of the linearity of the system. \\
+
+Each baseline gives you two visibility points in the $(u,v)$ plane. You get two because it doesn't matter whether you correlate station 1 with station 2, or station 2 with station 1: this is symmetric because the sky is real. You write our your visibilities, then you zero the accumulators, and you start again. In the meantime, the Earth has rotated a little bit, the projected baseline has rotated a little bit, so you get another point. And using that fact, you slowly fill up the visibility plane. Basically, to slice the bandwidth available to you more finely...The closer your points on the uv plane, the less smearing you get in your image. \\
+
+Feasibility: analog filters are costly and unstable, expensive, poor performance. We use a digital substitute: a \textbf{digital filterbank}. The simplest example of this you can imagine is the \textbf{Fast Fourier Transform}. \\
+
+\textbf{FX Correlator:} Build up visibility as a function of frequency.
+
+But we want the correlator to be a place of purity as well as correlation...we've taken our pure beautiful signal and done terrible things to it. The effect of shifting the antennas to make them look like they're on a plane perpendicular to the source direction, in conjunction with the frequency conversion. 
+
+\subsection{Sampling}
+
+``Nyquist and Shannon, two really good blokes.'' 
+
+\begin{description}
+
+\item[Band-limited:] the original signal can be reconstructed perfectly so long as it contains no power at frequencies $\geq \frac{1}{2 \Delta t}$\,Hz. 
+
+\item[Quantization:] In radio astronomy we use much less precision, than, say, a CD. But it turns out that 8 bit, 4 bit, sensitivity loss is around or less than a percent. But even if you throw away everything else and only remember if a signal is positive or negative (1 bit) you're only losing 36\% sensitivity. So, somewhere we need to correct for this sensitivity loss. It's typically not done with the correlator because that's kind of tricky. 
+
+``This is one of those rare beautiful times you can look Nature in the face and say, I reject your reality and substitute it with my own.''
+
+We can figure out the phase compensation we need to make, and correct for them with our complex multiplier. 
+
+\item[Fringe rotation:] Fringe rotation comes in because we've done the frequency conversion. So we have our incident radiation coming in, up at sky frequency (GHz), so it's zipping around in phase a billion times per second. But we change it to a voltage and change the frequency of the signal, but from that point onwards, the signal is at low frequency. The phase change is much slower now. 99\% of what a correlator does is filling the phases of the signals once you've got them. 
+
+\end{description}
+
+\subsection{Alternate implementation for a correlator: XF}
+
+FX approach is really logical and nice, but there's another way of looking at things because of the equivalence between convolution in the time domain and multiplication in the frequency domain. So, you can build a correlator that reverses these two operations. \\
+
+Take your two windows of samples and instead of running them through a Fourier transform and then cross correlating, you multiply and add the result together. So now you have visibility as a function of time offset, instead of frequency. \\
+
+This would be dumb because FTs are linear (doesn't matter whether you take a FT of a sum, or sum of a FT): there's no reason you shouldn't wait to do the FT until the end, and that way you're only doing one FT instead of a zillion. \\
+
+So, instead of windowing both data streams, window one of them. Multiply one sample by all of the other ones down here: that's our first set of visibility lags. That's XF because you do cross correlation first and then the FT. \\
+
+If you do the windowing like this (the sensible way) it affects the frequency response of the visibilities at the end. \\
+
+XF vs. FX:
+
+\begin{itemize}
+
+\item FX has fewer operations overall, which is nice because you don't need as much hardware (therefore cheaper). 
+
+\item FX the very first thing you do is pump it through a FT, so you end up with something that's much higher precision already - so, fewer operations but need to be done at much higher precision. 
+
+\item Most modern correlators are of the FX-style, but use digital filterbank rather than a simple FFT. The digital filterbank shapes the response more nicely, rather than having the sinc squared response (lower sidelobes, flatter out passband - you can do this with some fancy filtering techniques, at the cost of more hardware). As digital signal processing gets more powerful, that just gets more possible.
+
+\end{itemize}
+
+\subsection{Platforms that you can implement a correlator on}
+
+In order of more and more development effort, more and more bang for your buck, less and less reusability. 
+
+\begin{description}
+
+\item[Bulk standard Central Processing Unit (CPU)] To get your FFT to run on a CPU, you just write some code. This has a lot of benefits: you can write in ``normal'' code, there are lots of people who know how to do that. CPUs are natively very good at floating point (that's the stuff they're normally doing anyway). Big disadvantage: CPUs not made for doing correlations. So, a big system like the JVLA would take \textbf{many} CPUs: hundreds of thousands of millions. But there are a lot of arrays running correlators on CPUs: GMRT, VLBI, European VLBI network. 
+
+\item[Graphics Processing Units (GPUs)] Now used intensively for scientific computing. Like CPUs, mounted on a standard motherboard. Originally made so that you could shoot people up on Halo. More powerful and efficient at CPUs, also very good at floating point. But writing the code is more difficult (more specialized, less flexible), fewer trained GPU programmers available. You have to more carefully manage the data transfer. Lots of correlators running on GPUs: LOFAR
+
+\item[Field-Programmable Gate Arrays (FPGAs)] Reconfigurable logic blocks on a bit of silicon. You come in as a designer and tell each of those logic blocks what they're going to do, which is going to be connected to which other one. Advantage: more efficient. Programming is yet harder, yet fewer trained people. Examples: MeerKAT
+
+\item[Application-Specific Integrated Circuits (ASICs)] Not a single gate wasted, make the design by yourself, from the top. Send it off to the factory, get it spun, and it comes back to you and you hope you get it right. Most systems using ASICs will also use FPGAs as well, because you don't want to make the entire system inflexible. It's very difficult to upgrade during the lifetime of the instrument. Examples: Westerbork, VLA 
+
+\end{description}
+
+If you can only remember one thing: try and remember that to do interferometry, we need to make what we got look like it was sitting on a plane perpendicular to the source, and the correlator is the thing that does that for us. 
+
+\section{Calibration}
+
+Formally, we wish to use our interferometer to obtain the visibility function, a FT which we intend to invert to obtain an image of the sky. The visibility function describes the amplitude and phase of 2D sinusoids that add up to an image of the sky. 
+
+\subsection{Visibilities}
+
+The fraction that takes each segment contributes a complex field to the whole focal plane. 
+
+\subsection{Segmented (Filled) aperture}
+
+Each segment gathers field disturbances, diffraction rules.
+
+\subsection{Unfilled Aperture}
+
+Fewer segments, less collecting area, uglier diffraction pattern. 
+
+Interferometry: direction-dependent arrival for electric field disturbance, there's a path difference. 
+
+We must have some finite bandwidth (``the smallest...atomic...way to look at this'')
+
+In practice, we obtain an imperfect visibility. I guess, you want a visibility you can use to solve for the calibration.
+
+\subsection{Practical calibration considerations}
+
+\begin{itemize}
+
+\item nominal antenna positions, earth orientation and rate, clock(s), frequency reference
+\item antenna pointing/focus, voltage pattern, gain curve
+\item calibrator coordinates, flux densities, polarization properties: so that we have references in the sky against which to calibrate
+\item ALMA (episodic) and EVLA (continuous) monitoring for electronics, to see how much signal is gained. Monitor system over time so you know how to calibrate into units of Kelvin.
+
+\end{itemize}
+
+AO lets you correct for real-time geometry errors. 
+
+Our standard basic calibration consists of solving for these terms corrupting our equation for visibility. 
+
+To do this auto-correlation of a signal from a single antenna: this value will have a non-zero mean noise (non-zero expectation value). Noise usually dominates the power, so single dish radio astronomy calibration strategies rely on switching (differencing) schemes to isolate the desired signal from the noise. 
+
+Calibration error decreases with increasing calibrator strength and the square root of the number of antennas (number of baseline-based calibrators). 
+
+Self-calibration involves some kind of iteration. 
+
+\subsection{What is delivered by a synthesis array?}
+
+An enormous list of complex visibilities! Will have 10s to 100s of GBs, perhaps TBs, per observation. 
+
+You enforce that the gain should be the same across all sources, in order to solve for the antenna-based gain values. 
+
+Evaluating calibration performance: beware, because calibration of pure noise generates a spurious point source. 
+
+In practice, the electric field is a vector quantity, not a scalar quantity, so to do polarization you need to generalize this technique. My takeaway from looking at his equations on his slides is that the full-polarization formalism is a mess. 
+
+Basically, you're solving for this magical $J$ which encapsulates everything from ionosphere effects, to electronic gain, to geometry, ...
+
+New challenges: accounting for effects as a function of time. Observing wider fields of view (our sensitivity is higher) and to get those things right, need to know the voltage pattern and sensitivity pattern of the telescope, how that rotates with time. With our increased sensitivity, can we get images that reach the dynamic range implied by that sensitivity? 
+
+\section{Polarization in Interferometry}
+
+$ \mathbf{k} $: the direction from which stuff is arriving. So, if you get $ \mathbf{E} $ or $ \mathbf{B} $, you have all the information about the EM wave. We'll focus on $ \mathbf{E} $. In general, $E_x \neq E_y$ and $ \mathbf{E} $ can rotate as a function of position and time; the tip of the E field traces an ellipse. 
+
+\subsection{Processes that generate polarized radiation}
+
+\begin{description}
+
+\item[Synchrotron:] At cm to meter wavelengths, most polarized radiation is dominated by synchrotron radiation. It can be up to 80\% linearly polarized, in a direction perpendicular to the magnetic field lines. If the magnetic field varies along your line of sight, light will get polarized at different angles. 
+
+\item[Zeeman Splitting:] Split the hyperfine transition in the hydrogen atom into two energy levels, depending on the orientation of the $\mathbf{B}$ field with respect to the magnetic moment. Gives you information about the magnetic field strength at the site of emission. 
+
+\end{description}
+
+\subsection{Processes that alter polarization}
+
+\begin{description}
+
+\item[Thomson scattering:] electron gets a kick, you get polarized radiation from incoming unpolarized radiation
+
+\item[Reflection/refraction:] whenever you have a dielectric medium, you get refraction and a modification of polarization states. This happens on the moon, for example; you can actually derive the lunar dielectric constant. 
+
+\item[Faraday rotation:] LCP and RCP have different group velocities. This effect is appreciable for the ISM in our Milky Way, so you can measure a weighted average of the intervening magnetic field. If you know the geometry of the medium, you can do 3D tomography.
+
+\end{description}
+
+\subsection{Basis}
+
+\begin{description}
+
+\item[Linear:]
+
+\item[Circular:] In a circular basis,
+you can decompose the electric field into two rotating unit vectors. 
+
+\end{description}
+
+\subsection{Stokes parameters}
+
+3 parameters are all you need to describe a polarization ellipse.
+George Stokes defined four parameters (1852) and Chandrasekhar introduced them to astronomy (1946). 
+
+\begin{description}
+
+\item[I] Sum of total intensity in both directions
+\item[Q] 
+\item[U] 
+\item[V]
+
+\end{description}
+
+A monochromatic wave is always 100\% polarized:
+
+$$ I^2 = Q^2 + U^2 + V^2 $$
+
+L and R: linear and rectilinear, not left and right! 
+
+\Comment{Print out}{the IAU convention on polarization definitions}
+
+If you don't follow the convention, you get a public angry letter from the IAU! 
+
+In the quasi-monochromatic approximation, with a finite bandwidth and averaging time $ \tau >> \Delta \nu^{-1} $, IQUV are time-averaged quantities. 
+
+\subsection{Interferometric Polarimetry}
+
+Convert Stokes parameters to complex notation. 
+
+The correlator produces a \textbf{coherency matrix} out of the vector produced by the polarizers.
+
+\subsection{Messy reality}
+
+\Comment{Math}{Jones Calculus??}
+
+The Measurement Equation is what you try to solve in calibration:
+
+\begin{equation}
+\mathbf{E}_{ij}' = \mathbf{J}_i \mathbf{E}_{ij} \mathbf{J}_j^\dag
+\end{equation}
+
+The perfect instrument has a Jones matrix $ \mathbf{J} $ equal to the identity matrix. For a time delay, you get a phase lag in the Jones Matrix, or you could put receiver gain in. Polarization leakage gives you cross terms. Feed rotation gives you terms. Basically, the Jones matrix encapsulates the various sources of problems in your measurement.
+
+If you have a different ionosphere above two different antennas,
+antennas will see different Faraday rotation. This will result in leakage from LL to RR or v.v. during cross correlation (when you multiply your Jones matrices together). 
+
+Our ionosphere is also a plasma, and causes its own Faraday rotation.
+
+\subsection{Take-away}
+
+\begin{itemize}
+\item Radio antennas are fundamentally polarized
+\item Polarimetry required for certain astrophysical observations
+\item Linear systems make for fairly straightforward calibration
+\item Understanding polarimetry improves your unpolarized calibration and imaging
+\end{itemize}
+
+\section{Special Topic: Fast Radio Bursts}
+
+Pulsars are a broadband phenomenon. Dispersion is very well-defined for cold plasmas:
+
+$$ dt \sim \mathrm{DM} \cdot f^{-2} $$
+
+Where DM comes from integrating all of the electrons along the line of sight. Radio pulses also experience scattering and scintillation, so even if you have a pulse that was originally a delta function, by the time it gets to Earth it's picked up a scattering tail, which is broader at lower frequency ($f^{-4}$). \\
+
+FRBs have enormous dispersion, much more than what you would expect from something in our galaxy. It's going through some kind of plasma, since that's the only way to get dispersion this large. \\
+
+If you attribute all of the dispersion to the IGM, it looks like these have a very large redshift. But you can move them closer if you put all the electrons causing the dispersion into a compact area.
+
+Molonglo has found 2, GBT 1, Arecibo 1, Parkes 19
+
+Polarization swings (from a rotating object, or a dynamic magnetic field?)
+
+\section{Imaging and Deconvolution}
+
+\epigraph{``The most comfortable you are with Fourier Transforms, the more intuition you can have about how this process works.''}{David Wilner}
+
+Visibility is the 2D FT of the sky brightness distribution $T(l,m)$. 
+
+\begin{equation}
+V(u,v) = \int \int T(l,m) e^{-i 2 \pi (ul + vm)} dl dm
+\end{equation}
+
+The sky brightness distribution. 
+
+\begin{equation}
+T(l,m) = \int \int V(u,v) e^{-i 2 \pi (ul + vm))} du dv
+\end{equation}
+
+Fourier Theory: any well-behaved signal (which includes an image) can be expressed as the sum of sinusoids. The FT contains \emph{all} of the information of the original signal. Bracewell: as if ``functions circulated at ground level and their transform in the underworld'' Some properties include: if you stretch it in one domain, you shrink it in another. If you shift it in one, you add a phase shift in another. If you convolve it in one, you multiply it in another. If the function is limited to some domain, it's completely domain if the FT is sampled at 1 over that scale (Nyquist sampling theorem). \\
+
+\subsection{Visibilities}
+
+Complex quantity. Can be expressed as real and imaginary, or as amplitude and phase. If you Fourier Transform an image, you get an amplitude and a phase. If you go to some place in the Fourier domain, it's telling you an amplitude of a sine wave that has a particular period in $u$ and $v$ and the phase is telling you... It's a big collection of sine waves that has all of the information that the image does. Each point in $V$ contains information on the brightness \emph{everywhere}, it's not like it corresponds to some patch.
+
+Analog of a square wave in 2D is the uniform disk: you need a Bessel function because you need all of those sinusoids to make the sharp edges.
+
+So, V(0,0) is the total flux density (just the integral of the sky brightness). Sky brightness is a real function. $V(u,v)$ is Hermitian. You get two visibilities for one measurement, because the sky is real. ``So that's nice - saves you half the work."
+
+If you stretch and shrink and rotate your baseline and the visibility doesn't change, that's telling you that you have something like a delta function. If you stretch and shrink your baseline and the number changes a lot, that tells you that you've resolved the source (that tells you it was something big). But if you rotate it, the number is a little different, starting to find out what the structure of the source is. So the name of the game is, how many visibilities can I measure to reconstruct what the pattern on the sky is.
+
+\subsection{Aperture synthesis}
+
+You want to sample enough visibilities using distributed small aperture antennas to synthesize a large aperture antenna. More baselines means more samples. So you want as many antennas as you can build. Fortunately, the Earth is turning, so every baseline is changing all the time, so you can fill in the Fourier plane over time (you get a new uv sample every time, whether you want to or not!) 
+
+Remember that u and v measure the number of wavelengths between your antennas, so if you change the frequency of observation, you change the $(u,v)$ plane. 
+
+The visibility samplings are limited by the number of antennas and by Earth-sky geometry. Issues:
+
+\begin{itemize}
+
+\item Outer boundary: there's some region beyond which you don't see anything
+\item There's a hole in the middle; you can only get the antennas so close together before they collide, which means you have no information on scales larger than that. Things that are big are completely invisible.
+\item In between, you have terrible gaps (no measurements). Generally that means you've violated the sampling theorem (information is missing, there's stuff you have not measured). 
+
+\end{itemize}
+
+Throw out all of the big features: get a blurry version (big stuff). Throw out all of the small stuff (center of the UV plane): get the fine details, the edges. 
+
+\subsection{Formal description of imaging}
+
+Sky brightness is the Fourier transform of visibility. \\
+
+Sampling function: collection of all the delta functions corresponding to the locations of your antennas. (Literally a map of your u and v as the telescopes rotate around with Earth). \\
+
+The FT of the sampled visibilities yields the true sky brightness convolved with the PSF. Radio jardon: the ``dirty image" is the true image convolved with the ``dirty beam.'' \\
+
+Take the sampling function, put a 1 where there is data and 0 where there is no data and take the FT. Then you want to convolve this with the true image of the sky. You've made a ``dirty image.''
+You deconvolve a PSF from the image to get a model (that's what CASA CLEAN does) - and now the noise is a little bit of a mess.
+Or if you don't care what it actually looks like but you just want a statistical description, you can just analyze the visibility sample directly. \\
+
+How do you actually take a FT? Well, when you have a lot of data, you need FFT. ``Fastest Fourier Transform in the West.'' The problem with FFT is that you need visibilities on a regularly spaced grid. ``Gridding'' lets you resample the visibilities for FFT. \\
+
+For most arrays, you don't actually see the whole sky. You have carefully engineered antennas with high forward gain so that they point in a special small direction. But even in that case the antenna response is not uniform across the sky. So, the brightness distribution is really the brightness distribution on the sky modified by the antenna response function. On the image plane, you can divide this out when you're done. But if your source is too big for your primary beam, then you need to use more than one pointing. 
+
+\subsection{Imaging Decisions: Pixel and Image Size}
+
+Nothing we've said so far has a pixel size: you get to choose it. The conservative thing to do is to satisfy the sampling theorem for long baselines. You want to make sure that you've sampled it with the Nyquist-Shannon theorem (have a couple of pixels across that width). In practice, you'll use a few more.\\
+
+As for how many pixels, ideally you'd fill your full primary beam. In practice, you might not be able to store that much information. \\
+
+\subsection{Visibility weighting}
+
+For many decades, the software did either:
+
+\begin{itemize}
+
+\item Natural weighting: weight by the noise. The weight is 1 over the noise variance wherever you have data. This maximizes your point source sensitivity, gives you the maximum signal to noise, gives you the lowest RMS noise in the image. The problem then is you give more weighting to short baselines. 
+
+\item Uniform weighting: the weighting function is inversely proportional to the $(u,v)$ points. Gives more weight to long baselines, so angular resolution is enhanced. Bad thing is, it downweights some data, so point source sensitivity is less. 
+
+\end{itemize}
+
+Dan Briggs invented robust weighting. It's sort of like uniform weighting but it has an adjustable knob. Every software package that does robust weighting does it differently. So there's an adjustable knob between best point source sensitivity and best resolution. \\
+
+People also do tapering: your weighting function is just a Gaussian centered at the center of the $(u,v)$ plane. 
+
+\subsection{Deconvolution algorithms}
+
+``clean'' is the dominant deconvolution algorithm in radio astronomy. It's not the only one, but it's the only one actively used now. This is a very active research area, e.g. compressed sensing. Every 6 months or so, there's a paper where people apply theories from information theory to radio astronomy problems. So what \emph{is} clean deconvolution? \\
+
+The assumption is that the sky brightness is represented by a collection of point sources. In the 1970s, this seemed like a really good idea. You initialize a list of clean components, initialize a residual image that looks like the dirty image. You identify the highest peak in the residual image as the point source, and you subtract a scaled version of the dirty beam from that spot. Then you add that component to your clean component list. Then you go to the highest peak that's left, and keep doing that until you reach some reason to stop. \\
+
+Stopping criteria: typically, when you're no longer finding things that are real signals (all you have left is noise). A threshold of a residual map of say twice RMS noise might be a good place to stop. There are situations where you're not limited by the noise, you're limited by the dynamic range. 
+
+Then you take the clean components and convolve them with the clean beam (an ellipse) to make the restored image. The restored image is an estimate of your true sky brightness. The units of the restored image are mostly Jansky per clean beam area. \\
+
+A paper by Schwarz (1978) showed that clean is equivalent to a least squares fit of sinusoids to visibilities in the case of no noise. \\
+
+``Sometimes, you just have to make more than one map and publish more than one map.'' \\
+
+Beware: big bright things might have no Fourier components that you've measured, if your minimum baseline isn't small enough. If you lack short baselines, will that be problematic? So, ALMA and the VLA have this concept of a ``maximum recoverable scale.''
+
+Interferometry samples the Fourier components of the sky brightness. You make an image by FT the sampled visibilities, and then you deconvolve to attempt to correct for the fact that you've had incomplete sampling. 
+
+\section{Special topic: Solar System Interferometry}
+
+Van Zernicke Theorem: right up front it says, there's no coherence.
+But some types of emission from the Sun \emph{are} coherent, and yet we can still make interferometric images. Why it still works: that theory has never been worked out. \\
+
+Objects which are very close to the Earth may be in the near-field of the interferometer. In this case, there is the additional complexity that the received radiation cannot be assumed to be a plane wave. \\
+
+Planet rotation: if you know the coordinates, why can't you just unravel it? \\
+
+Jupiter: as you go to longer wavelengths, you're seeing deeper into the planet. Temperature is increasing with depth. Coming out tomorrow in science: dramatic increase in sensitivity of the VLA as seen in Jupiter imaging. \\
+
+Polarized emission from Mercury: you expect it to come out radially because as it comes through the surface, that polarizes the thermal emission. 
+
+\section{Advanced Calibration Techniques: Improving Calibration, Especially at Higher Frequencies}
+
+\epigraph{``The take-home message is: don't be afraid of self-calibration."}{Remy Indebetouw} 
+
+Much of the time, we need some amount of self-calibration to achieve the sensitivity and dynamic range of these interferometers. Despite regular calibration, you still have a lot of problems. \\
+
+We have an atmosphere. It's a bit of a nuisance to some parts of astronomy. In the lower ten kilometers or so, we've got water (mostly vapor), hydrosols (water droplets in clouds and fog), dry constituents (mostly oxygen and ozone). Skipping ahead, what will turn out to be the case is: we can hope to correct for the water, but ``we're still in a world of hurt when it comes to correcting for the dry bits." \\
+
+At the high frequency end for ALMA, you really have to schedule your telescope because transmission can vary dramatically depending on weather conditions. \\
+
+Signal comes down, you have some signal from the CMB, some signal from your source, that gets attenuated by the atmosphere ($e^{-\tau}$), assuming a perfect antenna (ignoring spillover and efficiencies) you add some system temperature. So, your signal to noise goes down exponentially with $e^{\tau}$. There's motivation to understand the atmosphere pretty thoroughly as you go through your observation. 
+
+\begin{description}
+\item[Chopper wheel method]: To measure $T_\mathrm{sys}$, typically put a load you know (ambient temperature load) in front of the receiver and measure the resulting power compared to the power when observing the sky. 
+\end{description}
+
+ALMA measures the system temperature as a function of frequency, not just per band. \\
+
+If you want to go from Kelvins to Janskys, then you have to measure the antenna efficiency factor: you have to measure a real source. \\
+
+Amplitude tells you how much emission there is, phase moves it around. The atmosphere affects both. The most irritating aspect is that it changes with time. The changing atmospheric conditions (each antenna is looking through a different amount of PWV) - different phase change, different antenna, different time. You've destroyed the phase information that's absolutely critical for doing what we do. Counter-intuitively, you can observe in apparently excellent sub-mm weather (in terms of transparency, i.e. low PWV) and still have terrible ``seeing'' (i.e. phase stability). \\
+
+Bad words in astronomy: magnetic fields, turbulence, dust. Turbulence, qualitatively: smaller wiggles on small scales, bigger wiggles on big scales. More phase variations on long scales, although there's usually a break at very long baselines. 
+
+\subsection{Phase correction techniques}
+
+\begin{description}
+
+\item[Fast Switching:] if you go to a bright source, you can solve for the gain terms, and apply them. If you do it fast enough, you fix all your problems. But obviously there's a limit to how quickly you can do this. Larger baseline, larger RMS. You can fix everything above an \emph{effective baseline}. Cycling faster drops it down faster. 
+
+\item[Self-Cal:] works if your source is bright enough. If you have some independent system for measuring how much water vapor there is (which ALMA does), ideally above each antenna, you can just plug that in and correct them all and you're done. If you have two receivers functioning at the same time (which ALMA in theory does) you can observe at some low frequency and transfer up. If you set up the problem correctly, you have more constraints than degrees of freedom, so you can improve calibration and your source brightness model. Unlike regular calibration, you need to bootstrap and come up with the model visibilities. 
+
+\item[Radiometery:] measures fluctuations in the temperature. Every antenna has its own separate receiver. At the moment, you try to do a fit for the whole 2-3 period of data (you have more data to fit). You could also do it on the fly, but then you don't have as much information. Main effect: introduce mean phase offsets per antenna. Limited by imperfect atmospheric models and dry delay. 
+
+\end{description}
+
+``Resolved structure'' means: there's more flux on short baselines than on long baselines. With phase problems, you scatter power all over the place. 
+
+\section{Spectral Line Analysis}
+
+Spectral line mode allows you to remove narrow-band interference. You beam size is different for every wavelength of observation. \\
+
+The problem is, a lot of things are a function of frequency (and will therefore be different at different ends of the band): the UV distribution (bandwidth smearing, chromatic aberration; fringe spacing is $\lambda/B$), the instrument frequency response, atmospheric effects (opacity), source emission (spectral index, polarized emission, Faraday rotation), RFI (typically worse at lower frequencies). \\
+
+There are plots for VLA and VLBA RFI as a function of frequency. There are tables listed online for known RFI. So you can try to avoid known RFI by constraining your bandwidth. RFI can even saturate your LNAs and really screw up your sensitivities in the band you've observing in. 
+
+\subsection{Calibration}
+
+Not much different from continuum observations, but a few additional items to consider:
+\begin{itemize}
+\item Presence of RFI
+\item Bandpass calibration
+\item Doppler calibration (calibrate the frequencies)
+\item Correlator effects
+\end{itemize}
+
+With all this spectral line data, you probably have to deal with a large dataset, so averaging your data may be helpful for reducing the size etc. \\
+
+The first thing you should do is take a frequency averaged 'channel 0' data set, and check for obvious problems, and copy those flags to your line data. Looking at data channel by channel is impractical because it will give you very low signal to noise. \\
+
+Characteristics of RFI: it gets noisier across the line, phase doesn't line up across the signal. Often RFI comes and goes, so if you take those channels and plot them as a function of time, you can see it has a limited extent. \\
+
+Bandpass calibration: want to correct for the offset of the real bandpass from the ideal one. The bandpass is the relative gain you have of an antenna or a baseline as a function of frequency. It's mostly due to the electronics of individual antennas. Mostly, we can assume that instrumental effects vary very slowly with time. You can generate complex response functions for each antenna, use a lest square method applied channel by channel to decompose cross-power spectra...to determine the bandpass gain factor, usually observe a bright continuum source. A good bandpass calibrator is compact (so that the S/N is the same for each baseline), flat spectrum (no absorption lines), bright, no sharp variations in amplitude or phase, and any variations should not be dominated by the noise \\
+
+Integration time: $ 9 \times (S_\mathrm{target} / S_\mathrm{cal}) t_\mathrm{target} $ \\
+
+Ringing effects due to the spectral response that you have from how you correlate and combine the signals in your interferometer. From an XF correlator, lags are introduced. If you have only a select number of lags, means you have a translated spectrum and you only have information for a limited region in there. That then corresponds to multiplying the true lag spectrum by a rectangular function (or a boxcar function). That means that you do the correlation function for a large number of lags, and you multiply that (or it automatically becomes multiplied) by this boxcar function. When you take the Fourier Transform, then you have also included the FT of the boxcar function in there. So, the spectral response of that: that is a sinc function. That has large (22\%) sidelobes. 
+
+Continuum emission: doesn't change as a function of channel. 
+
+\section{Very Long Baseline Interferometry}
+
+``Not very long'' means $10^2-10^5\,$m (connected elements), ``definitely very long" means $10^5-10^7$, ``space baselines" means $10^7$ and higher. But it's not just about baseline length. ``It's more like a syndrome than a disease." (``Doctor, I have very high fringe rates...'') \\
+
+There's no fundamental difference between VLBI and regular interferometry-just technology, convenience, convention. A useful distinction is that the antenna electronics are independent (running on separate clocks). It's very hard to distribute clocks very accurately over long distances. \\
+
+Of course, you get very high angular resolution. But even cooler than that is what you can do in terms of positioning (very low positional wobble). And the sensitivity can be very good as well, because you can have a lot of collecting area. \\
+
+The catch is that if you have very very high resolution, there will be a lot of things resolved out (``a lot of things look extended once you're looking this far in"). Surface brightness sensitivity is appalling (filling factor of the array is very low). Useful for: AGN, pulsars, masers, SNe remnants, magnetically active stars, when you want: compact flux (is it there at all?), (very) small-scale structure, precise location (astrometry, can centroid an object's position to $\sim 0.01$\,mas), propagation effects in the ISM. And if you know the location of a source very precisely, can better model the location of antennas or propagation effects. \\
+
+A VLBI detection instantly identifies a compact non-thermal source. In the thermal regime, you're optically thick. There really aren't thermal processes that can heat something up to $10^5$\,K, ...
+
+In the high-z universe, the only thing that can pump out so much energy in such a small space is a radio AGN (accretion onto BH). \\
+
+Geologists measure the rotation phase of the Earth to $\sim 4$\,microseconds. This can change a little bit due to earthquakes, wobbling of Earth's axis. 
+
+\begin{description}
+\item[VLBA] The only VLBI network in the world that operates full-time. And you can add the GBT, VLA, Arecibo to be the ``High Sensitivity Array.'' 0.3-86\,GHz. 
+\item[EVN] All of the individual radio antennas in Europe come together about three months out of a year. 0.3-43\,GHz nominally, but a lot of the telescopes don't have receivers in every single band. 
+\item[LBA] The only Southern Hemisphere instrument. 
+\item[East Asian VLBI Network] Not yet possible to make an open proposal. 
+\end{description}
+
+Now, non-traditional VLBI:
+
+\begin{description}
+\item[LOFAR, ILT] Has stations spread out all across Europe. Meter wavelengths: 15-240\,MHz. 
+\item[GMVA] 3\,mm / 86\,GHz. Only observes twice a year, so you have to pray for good weather. 
+\item[Event Horizon Telescope] Goal was to directly image the shadow of a black hole. 
+\item[RadioAstron] 10\,m telescope in space! 
+\end{description}
+
+\subsection{Comparison to Regular Interferometry}
+
+\begin{itemize}
+\item On long baselines, the atmosphere/ionosphere are not correlated. As you get to higher frequencies, though, short baselines have the same problem (as soon as you're one turn out of phase, it doesn't matter whether you're one turn out of phase or twenty.) 
+\item The Earth orientation parameters (absolute rotational phase, where the axis is pointing) become more important. 
+\item RFI is different and uncorrelated at every station (except for satellites) so it's hard to get a spectrum that's clear everywhere. But because it's uncorrelated, it goes away. 
+\item Historically, took sample voltages and wrote them to disk, stuck them on a boat, plugged them into a correlator (2 weeks, 2 months, 2 years later). But it doesn't matter: a digital sample doesn't care whether it sat on a disk for a year. And nowadays, optical fibers are used to send voltages directly to a correlator.
+\item Correlator is probably bigger and more expensive. 
+\item Frequency standard: electronics usually independent at the different stations. Very difficult to take a clock and send it a thousand km without delaying it in some way. So you need a free-running clock at each site, introducing a difference that needs to be calibrated later. 
+\end{itemize}
+
+\subsection{Dispelling rumors...}
+
+\begin{description}
+
+\item[Poor sensitivity:] used to have to record data on tapes. And the fact that you can have a lot of collecting area helps, although you're still sunk with low surface brightness. 
+\item[Unstable systems:] what hasn't changed is the atmosphere being uncorrelated (but this is the same problem in extended configuration of VLA, ALMA, and the solution is the same: you do rapid switching). But the electronics have improved a lot.
+\item[Unreliable Imaging:] phase stability used to be bad. But nowadays, with more stable electronics and improved calibration, it's not really a problem. And high fringe rates wash out the rest of the sky, allowing you to focus on your calibration source. Also, antennas are usually not laid out optimally (we just used the dishes that are there, you're limited by infrastructure). Don't have optimized UV coverage. 
+\item[Uncertain flux scale:] VLBI has very good resolution, means you can only see small things, but small things change in time. Can't do the same kind of referencing to a known source as with shorter-baseline instruments. Absolute flux scale is probably only valid to $\sim 10$\%. 
+\item[Limited FOV:] Time smearing and bandwidth smearing are HUGE. Cool new feature in modern correlators: lets you do multiple small output datasets centered on sources of interest, allows ``multi-field'' VLBI. 
+
+\end{description}
+
+Fringe fitting: you're fitting to phase vs. frequency.
+The Fourier Transform of frequency vs. time is: rate vs. delay. In the rate vs. delay 2D space, there should be a peak somewhere corresponding to the slope of that fringe fitting thing.
+
+\subsection{Practicalities}
+
+You want to point at a calibrator once every few hours, to perform the bandpass calibration. 
+
+ParselTongue package (a python interface to AIPS). Makes scripting way easier. (Thank God). 
+
+\subsection{Looking ahead...}
+
+Increased bandwidth for sensitivity, new processing techniques, ...
+LOFAR imaging is here now, but is far from reaching its potential.
+Using phased ALMA is a total game-changer. Phased SKA1 mid. Need more southern hemisphere antennas; African VLBI network? 
+
+\section{Future Array Design \& Technology}
+
+``When you become director, the first thing they do is rip your heart out and delete your brain.'' \\
+
+People tried to detect radio emission from the Sun in the late 1800s but equipment wasn't sensitive enough. And (incorrect) calculations predicted that one wouldn't be able to see radio signals anyway. Jansky's children still come to the Jansky lecture in Charlottesville. \\
+
+Grote Reber started making maps of the sky in radio wavelengths. Cass A, Cyg A, Sag A - all using a simple radio receiver. It was during WWII that radio emission was discovered from the Sun (and classified). (They would notice that the enemy was attacking at dawn when they were looking to the east.) When the war ended, there were certain countries in the world (UK, Australia, Netherlands) who moved that experience into radio astronomy. (``The fact that you just heard from two Australians in a row is kind of a faint echo of WWII.'') US came in a bit later. \\
+
+``Here's the single equation for my talk:" resolving power = $\lambda$/size. For radio waves, $\lambda$ is large, so size must be large too. Turns out you can break up a dish into parts and combine those parts electronically. People started building interferometers in the 1960s. The VLA is the state-of-the-art at the moment. \\
+
+In VLBI, of course, the sky is different when you get to these resolutions, but other than that the process is the same. ``If you get tired of the Earth and decide you want to do more, you can put a telescope into space.'' \\
+
+At very low frequencies (below 20-30\,MHz) the ionosphere blocks the emission. The ionosphere is caused by the Sun coming up and ionizing the layers of the atmosphere, so it's highly variable. \\
+
+``People are remarkable sources of RFI.'' \\
+
+The SPT is a single-dish antenna. You want to be in high, dry places... the type of science you're doing at high frequencies is different (molecular gas and dust, the high-z universe). Low frequencies (non-thermal emission, electrons doing things in magnetic fields). \\
+
+If you really want to chase these IR, and ultimately some gamma ray and x ray observations, is go to space. Radio Telescopes: WMAP, Planck, Herschel (much more like ALMA in some ways - SF regions, molecular gas and dust in nearby objects). From space, you can see the whole sky. WMAP took lots of all-sky maps at different frequencies, and by calibrating, you can take out the effect of the galaxy. \\
+
+``There's really quite an arsenal of instruments around the world." \\
+
+\begin{description}
+
+\item[SKA:] The biggest game in town around the world. International, very large project. The first SKA meeting took place down the road in 1995. ``These simulations are exactly correct. That's my formal position on this." ``It's kind of a global adventure at this point.'' Headquarters are at Joddrell Bank.
+
+\item[ngVLA:] ngVLA: higher frequencies than the SKA, talking about increasing the number of antennas. Becomes possible to do thermal imaging on mas scales. Planet formation on mas scales. This is something ngVLA can do that ALMA can't do. 
+
+\item[Canadian HI Intensity Mapping Experiment:] Measuring HI to correlate with other catalogs. ``They're using an interesting technique; they're putting Canadians at the focus. We don't support that here in the US." 
+
+\item[FAST:] The big cahoona. One of the most remarkable things at the moment. ``Our Chinese colleagues are building FAST...they have a bigger cast, and they have more money than we do.'' They're going to open this in September. A lot of what FAST's science case is about is just raw sensitivity: pulsars, SETI (if you want to put time into that). ``and I'm desperately trying to get an invitation to the opening in September.''
+
+\end{description}
+
+Technology challenges
+
+\begin{itemize}
+\item Scale. Producing 2,000 antennas requires an army of people to maintain. Want cheap, mass-produced, low-maintenance, accurate antennas. Receivers have to be mass produced, have to be reliable. There are opportunities like phased-array feeds, also want wide bandwidths. 
+\item Cryogenics. Can improve sensitivity by factors of a few if you cool down your receivers. 
+\item Moving around signal with fibers.
+\item Correlators keep getting bigger and bigger. 
+\item Data management. Deciding what to store and how to process it: becoming one of the major problems of our field. The software is getting difficult. 
+\end{itemize}
+
+As we try to do more and more, need people who understand how all this works and make them work and drive them forward. More power, more bits, more complexity... \\
+
+CASA is becoming global software infrastructure for radio astronomy.  \\
+
+Phased array feeds: instead of putting one receiver at the focus, you put this array. \\
+
+You need to go sit down in a quiet room to understand what we're doing. 
+
+``Survival: When you are in deep trouble, say nothing, and try to look like you know what you're doing."
+
+\section{From the CASA Tutorial}
+
+$u$ and $v$ are spatial wavenumbers. 
+
+The observed visibility $v'$ between two antennas $(i,j)$ is related to the true visibility $V$ by
+
+\begin{equation}
+V'_{i,j}(u,v,f) = b_{ij} (t) [B_i(f,t) B_j^*(f,t)] g_i(t) g_j(t) V_{i,j} (u,v,f) e^{i[\theta_i(t)-\theta_j(t)]}
+\end{equation}
+
+Intuitively, I prefer this way of writing it, since then you separate out each antenna's contribution:
+\begin{equation}
+V'_{i,j}(u,v,f) = b_{ij} (t)
+[B_i(f,t) g_i(t) e^{i\theta_i(t)}]
+[B_j(f,t) g_j(t) e^{j\theta_j(t)}]^*
+V_{i,j} (u,v,f)
+\end{equation}
+
+The \emph{gain} is due to things like temperature, atmospheric conditions, etc. It is represented by an amplitude ($g_i$) and a phase ($\theta_i$). $B_i$ is the complex bandpass: the instrumental response. And $b(t)$ is a term for the baseline, acknowledging uncertainties or errors in the positions of the antennas (this could be a problem right after a configuration change, for example).
+
+\section{Wide Band \& Wide Field Imaging}
+
+Initial calibration gets rid of the direction independent gains.
+When you go to wide bandwidths and wide fields, get direction-dependent gain pattern due to the primary beams. Sky brightness now changes with frequency. All these extra terms mean: after you do your basic calibration, don't get simple convolution equation, can't directly apply deconvolution algorithm.
+These things go hand in hand. Having a wide bandwidth in some way gives you a wide field...
+
+\subsection{Wide Band}
+
+Main benefit is increased sensitivity since error $\propto 1/\sqrt{N_\mathrm{chan}}$. \\
+
+Algorithms: \textbf{cube imaging} (slice data up into channels and reconstruct each one separately) but the resolution limits you to that of the lowest frequency (?). \textbf{Multi-frequency synthesis} lets you put all the data onto one grid and run deconvolution. You can get a lot of improvement by modeling the spectrum during the reconstruction (say, assuming a power law). \Comment{AYQH}{I don't see why this can't be generalized?} Of course, the cube method has the advantage that it doesn't rely on a particular spectral model. \\
+
+Crowded field (pushing instrument to its confusion limit) might have lots of sources with PSFs overlapping with each other. \\
+
+\textbf{Bandwidth smearing:} shrinking and stretching of coordinates in one domain corresponds to a shrinking and stretching of coordinates in the other domain. If you average your data in frequency too much, you have a problem. The limit is related to the FOV you want to image...should be smaller than the resolution limit you want to measure:
+
+$$ \delta \nu < \frac{\nu_0 D}{b_\mathrm{max}} $$
+
+\textbf{The W Problem:} The W term is the extra phase introduced by the projection of the baseline onto the path between your telescope and the source. If you don't correct for this, your sources will move in the image in a systematic way.  \\
+
+Gridding: take data that's on UV tracks and put it on a 2D grid. If you have the same function repeating at every grid point, that's a convolution. The gridding process is inherently a convolution: \textbf{convolutional resampling.} \\
+
+If you ignore the W-term, you get artifacts. Using \textbf{W-projection} you have a lot more freedom in how you quantify your W-term. It's more accurate and faster than Facet Imaging, but becomes computationally expensive with wide fields of view. \\
+
+\textbf{The Primary Beam changes between measurements: } The idea is that during an observation, for any number of reasons, the primary  beam might move (drift scanning, or during tracking rotates around the pointing axis).
+Another problem: you have R and L beams, which rotate around with time. You start to see artifacts at a particular dynamic range ($\sim 10^4$). Each measurement gets convolved by the appropriate beam kernel for that measurement. 
+
+From Aaron Parson's notes: W-projection is a direction-dependent phase error, and the beam thing is a direction-dependent gain that varies with time. In both cases, you have a direction-dependent measurement error, which you correct for by convolving each measurement with some kernel. 
+
+\begin{description}
+\item[Kernel:] the matrix convolved with an image in order to perform operations such as blurring and edge detection. 
+\end{description}
+
+\section{Error Recognition and Analysis}
+
+Slides have various error residual patterns that you can learn to associate with various causes (e.g. the six-fold thing comes from the Y-shape of the VLA...) 
+\Comment{To Learn}{Given the integration time, etc, what would you predict the RMS noise to be?}
+
+\section{Mosaic(k)ing}
+
+ The simplest possible scenario is: you have a compact source and you know exactly where it is (size of the source is much less than the antenna FOV). But you might have sources distributed over a wide area, or you don't know, or source is big compared to your FOV. Then you need to mosaic: you tile an area of interest with pointings of your antennas that allows you to image a larger area and recover flux on angular scales larger than that implied by your shortest baseline. For larger scales, might need to add single dish data.\\
+
+Spatial Period: Largest scale that doesn't get resolved out is determined by distribution of baselines: $$ \theta_\mathrm{LAS} = \frac{1}{2} \frac{\lambda}{b_\mathrm{min}} $$
+
+In practice, you only measure things ``half'' that big (say) very well. Also, take $b_\mathrm{min}$ to be the minimum baseline for which you have reasonable UV coverage, doesn't count to have one tiny baseline and lots of big baselines. \\
+
+ALMA has an array of 12\,m antennas that are very flexibly configurable. But it also has an array of 7\,m antennas, which is one way to make it more compact and evade the dish size limit. (The ALMA compact array). \\
+
+Foundational concept of mosaicking: \textbf{Ekers \& Rots Theorem}. The idea is that you don't just measure a single spatial frequency, you actually measure a range of spatial frequencies. \\
+
+If you have a collection of single baseline point measurements of the aperture plane, considering the blurring that Ekers \& Rots implies you get a more diffuse pattern, which is good because you get sensitivity in between the individual baseline measurements. The problem is: consider a single baseline measuring one correlation, you get one measurement. The solution is to scan the telescopes across the sky and measure the visibility many times, lets you separate out the Fourier modes, and increase the map's Fourier resolution. You're most sensitive to frequencies at the actual baseline, and because of the aperture function it falls off away from that. 
+
+\subsection{how to arrange the pointings}
+
+Theoretically optimal, but effects of spacing your pointings a little more on the sky is fine, and is often a good option if you need higher survey speed. 
+
+\subsection{on-the-fly interferometry}
+
+you scan all the antennas together across the sky, recording the data and antenna positions quickly $\rightarrow$ reduces overhead, although there's a high data rate. 
+
+\subsection{how you stitch that data together}
+
+\begin{description}
+\item[linear combination] make individual maps and stitch them together at the very end of the process
+\item[joint deconvolution:] stitch together the dirty maps and deconvolve that product together (make a linear mosaic of dirty maps and your deconvolution algorithm - clean, maximum entropy, etc - acts on that). You form a joint dirty beam that consists of a weighted combination of the individual observations' dirty beams. Because of the nature of deconvolution algorithms, you get more large scale structure, although the approach is more sensitive to how good your model of the primary beam is. 
+\item[widefield imaging:] you do the combination in the UV plane. phase shift each pointing to a common phase center. use a gridding kernel to grid the UV data into a common UV plane (this is what's preferred now for ALMA and a lot of VLA data). That's FT'd into a single dirty image with a common PSF and deconvolved by the usual methods. 
+\end{description}
+
+\subsection{practical issues}
+
+The pointings are all taken in a time sequence. Each pointing can have different uv-coverage, atmospheric conditions, the pointing is critical because you're trying to make use of data in a place where the beam is changing quickly (instead of just in the middle, where the beam is flat). 
+
+\subsection{missing short \& zero spacings}
+
+because of the finite dish sizes, get a hole in the middle. what does that do to your measurement? well, the effect is that you're not measuring the mean level of the sky, or even the local mean level, which results in a variable local background that can be negative.
+if you imagine that your interferometer had continuous UV coverage from 0 out to some long baseline. the notch in the middle gives you these near-in negative bowls right near the central main lobe of the PSF. causes obvious and problematic effects in your maps. looks literally like negative bowls in the middle, around the object. you can never clean all the way down, so there are residual negative side lobes.\\
+
+You can help this by adding single-dish data.
+
+\subsection{adding single-dish data}
+
+The simplest way to add total power data to an existing interferometer map is to \textbf{feather it in}. Consider interferometer visibility measurements, binned in UV distance. Gap in the middle is the hole in the UV plane. There's generally no constraint in clean that the total flux of clean components be any particular number. So, clean will just guess a value where you don't have any data. \\
+
+You high pass filter the interferometer data and add the single dish data. You use the single dish data where it's most effective, and don't use the interferometric data where it's least effective. \\ 
+
+There is no cookie cutter approach to imaging extended emission with an interferometer (??) 
+
+\section{Multi-messenger exploration of the transient sky with LIGO and the VLA - A. Corsi}
+
+We are mostly interested in the EM counterparts of explosive events marking the birth of neutron stars or black holes. \\
+
+Highly energetic astrophysical transients are thought to be very promising GW sources. Advantages of GW studies: emission is only weakly beamed, is more uniform. Also, GW detectors are weakly directional (can basically monitor the whole sky) but therefore have poor localization when compared to traditional EM telescopes. Poses challenges if you want to follow up with an optical or radio telescope. They're very weakly interacting: they come directly from the central engine, are not obscured or scattered by material, are complementary to EM diagnostics of surrounding medium (CSM, surface, outflows, ...) \\
+
+GW signal lasted around 200\,ms. Astrophysical implications: unexpectedly massive ($29-36\,M_\odot$) exist and merge. We were expecting lower mass, stellar mass black holes. Also, they must have formed in a low-metallicity environment. \\
+
+Second observing run in the fall, will be tens of them in 2017-18. \\
+
+There was a large set of facilities that tried to follow up the GW event. \\
+
+No possible counterpart was found for this event, which wasn't surprising because it was a binary BH. \\
+
+The LIGO localization areas in the sky are on the order of hundreds of square degrees. \\
+
+Initially, you might get the (short) GRB and radio afterglow. Later, there might be kilonovae in the optical (R-process nucleosynthesis). Might be interaction with ejecta in the circumburst medium. So, jet launch or lower-speed dynamical ejecta. \\
+
+In the radio, on very short timescales, within 100 seconds you might get a prompt radio pulse (FRBs?) Days-weeks: radio emission from the ultra-relativistic jet. Weeks-months: dynamical ejecta aligned with the ISM. Slower radio remnant. Take-home message is: flux over time for various radio counterparts, they populate a broad range of timescales.
+
+\subsection{with the VLA}
+
+Strategy 1: map the entire GW area, or however much you can. It's 100 square degrees. If I do that, I can limit my telescope times to 30 hours per observation. So you really need 150 hours per GW trigger. But you would have good prospects for detecting a counterpart. Strategy 2: use optical telescopes with larger FOV to map the area first. Then you can exploit the strength of the VLA (go deep, multi-band observations to constrain the spectrum). \\
+
+When you're following up, the question is: how do you identify the real counterpart to the GW event among the many transients you will discover? In the optical, this is a tough job. The radio transient sky is much cleaner than the optical (you expect around 1 per square degree). Probably, what you need to do is combine optical and radio studies.
+
+You need a complete optical galaxy catalog in order to help target the search. 
+
+\end{document}
